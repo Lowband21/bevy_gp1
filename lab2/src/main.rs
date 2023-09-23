@@ -166,7 +166,7 @@ fn fps_display_system(diagnostics: Res<DiagnosticsStore>, mut query: Query<&mut 
     if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
         for mut text in query.iter_mut() {
             if let Some(avg) = fps.average() {
-                text.sections[0].value = format!("FPS: {:.2}", avg);
+                text.sections[0].value = format!("FPS: {}", avg);
             } else {
                 text.sections[0].value = "FPS: N/A".to_string();
             }
