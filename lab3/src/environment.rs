@@ -3,7 +3,7 @@ use bevy::prelude::*;
 #[derive(Component)]
 pub struct Platform {}
 
-pub const PLATFORM_WIDTH: i32 = 1640;
+pub const PLATFORM_WIDTH: i32 = 1500;
 pub const NUM_PLATFORMS: i32 = 100;
 
 pub fn spawn_platforms(mut commands: Commands, asset_server: Res<AssetServer>) {

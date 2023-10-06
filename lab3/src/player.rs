@@ -148,7 +148,7 @@ pub fn confine_player_movement(
 
         let half_player_size = PLAYER_SIZE / 2.0; // 32.0
         let x_min = 0.0 + half_player_size;
-        let x_max = window.width() - half_player_size;
+        let x_max = (window.width() - half_player_size) * 100.0;
         let y_min = 0.0 + half_player_size;
         let y_max = window.height() - half_player_size;
 

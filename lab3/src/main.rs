@@ -159,7 +159,7 @@ pub fn spawn_camera(mut commands: Commands, window_query: Query<&Window, With<Pr
     commands.spawn(Camera2dBundle {
         transform: Transform {
             translation: Vec3::new(window.width() / 2.0, window.height() / 2.0, 1000.0), // Z-value is set higher for visibility
-            scale: Vec3::new(0.5, 0.5, 1.0), // This scales the camera for initial zoom
+            scale: Vec3::new(1.0, 1.0, 1.0), // This scales the camera for initial zoom
             ..Default::default()
         },
         ..Default::default()
