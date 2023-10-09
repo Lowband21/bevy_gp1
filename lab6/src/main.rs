@@ -48,7 +48,7 @@ fn main() {
         .add_state::<GameState>()
         .add_plugins(LogDiagnosticsPlugin::default())
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
-        .add_plugins((CameraPlugin, PlayerPlugin, PhysicsPlugin, UIPlugin).in_set())
+        .add_plugins((CameraPlugin, PlayerPlugin, PhysicsPlugin, UIPlugin))
         .add_plugins(
             WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::Escape)),
         )
