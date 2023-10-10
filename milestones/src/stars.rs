@@ -1,3 +1,4 @@
+use bevy::audio::PlaybackMode;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use rand::prelude::*;
@@ -5,6 +6,48 @@ use rand::prelude::*;
 use crate::Player;
 
 use crate::prelude::*;
+
+pub struct StarPlugin;
+
+impl Plugin for StarPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<StarSpawnTimer>()
+            .init_resource::<Score>()
+            .init_resource::<HighScores>()
+            .add_systems(Startup, spawn_stars)
+            .add_systems(Update, player_hit_star)
+            .add_systems(Update, update_score)
+            .add_systems(Update, tick_star_spawn_timer)
+            .add_systems(Update, spawn_stars_over_time);
+    }
+}
+
+pub fn update_score(score: Res<Score>) {
+    if score.is_changed() {
+        println!("Score: {}", score.value);
+    }
+}
+#[derive(Resource)]
+pub struct Score {
+    pub value: u32,
+}
+
+impl Default for Score {
+    fn default() -> Score {
+        Score { value: 0 }
+    }
+}
+
+#[derive(Resource, Debug)]
+pub struct HighScores {
+    pub scores: Vec<(String, u32)>,
+}
+
+impl Default for HighScores {
+    fn default() -> HighScores {
+        HighScores { scores: Vec::new() }
+    }
+}
 
 #[derive(Component)]
 pub struct Star {}
@@ -88,5 +131,38 @@ pub fn spawn_stars_over_time(
             },
             Star {},
         ));
+    }
+}
+
+pub fn player_hit_star(
+    mut commands: Commands,
+    player_query: Query<&Transform, With<Player>>,
+    star_query: Query<(Entity, &Transform), With<Star>>,
+    asset_server: Res<AssetServer>,
+    mut score: ResMut<Score>,
+) {
+    if let Ok(player_transform) = player_query.get_single() {
+        for (star_entity, star_transform) in star_query.iter() {
+            let distance = player_transform
+                .translation
+                .distance(star_transform.translation);
+
+            if distance < PLAYER_SIZE / 2.0 + STAR_SIZE / 2.0 {
+                println!("Player hit star!");
+                score.value += 1;
+                let sound_effect = asset_server.load("audio/laserLarge_000.ogg");
+
+                // Play the sound effect.
+                commands.spawn(AudioBundle {
+                    source: sound_effect,
+                    settings: PlaybackSettings {
+                        mode: PlaybackMode::Despawn,
+                        ..default()
+                    },
+                });
+
+                commands.entity(star_entity).despawn();
+            }
+        }
     }
 }

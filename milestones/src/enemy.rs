@@ -3,6 +3,8 @@ use bevy::window::PrimaryWindow;
 use rand::prelude::*;
 
 use crate::prelude::*;
+use crate::stars::Score;
+use crate::GameOver;
 use crate::Player;
 
 use bevy::app::App;
@@ -14,11 +16,12 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<EnemySpawnTimer>()
+            .add_systems(Startup, spawn_enemies)
             .add_systems(Update, tick_enemy_spawn_timer)
             .add_systems(Update, spawn_enemies_over_time)
-            .add_systems(Update, spawn_enemies)
             .add_systems(Update, enemy_movement)
-            .add_systems(Update, handle_enemy_boundary);
+            .add_systems(Update, handle_enemy_boundary)
+            .add_systems(Update, enemy_hit_player);
     }
 }
 #[derive(Component)]
@@ -215,5 +218,40 @@ pub fn spawn_enemies_over_time(
                 direction: Vec2::new(random::<f32>(), random::<f32>()).normalize(),
             },
         ));
+    }
+}
+
+pub fn enemy_hit_player(
+    mut commands: Commands,
+    mut game_over_event_writer: EventWriter<GameOver>,
+    mut player_query: Query<(Entity, &Transform), With<Player>>,
+    enemy_query: Query<&Transform, With<Enemy>>,
+    asset_server: Res<AssetServer>,
+    score: Res<Score>,
+) {
+    if let Ok((player_entity, player_transform)) = player_query.get_single_mut() {
+        for enemy_transform in enemy_query.iter() {
+            let distance = player_transform
+                .translation
+                .distance(enemy_transform.translation);
+            let player_radius = PLAYER_SIZE / 2.0;
+            let enemy_radius = ENEMY_SIZE / 2.0;
+            if distance < player_radius + enemy_radius {
+                println!("Enemy hit player! Game Over!");
+                let sound_effect = asset_server.load("audio/explosionCrunch_000.ogg");
+
+                // Play the sound effect.
+                commands.spawn(AudioBundle {
+                    source: sound_effect,
+                    settings: PlaybackSettings {
+                        mode: PlaybackMode::Despawn,
+                        ..default()
+                    },
+                });
+
+                commands.entity(player_entity).despawn();
+                game_over_event_writer.send(GameOver { score: score.value });
+            }
+        }
     }
 }

@@ -32,9 +32,15 @@ use crate::enemy::*;
 use crate::environment::*;
 use crate::player::*;
 use crate::prelude::*;
+use crate::stars::*;
 use crate::ui::*;
 
 use seldom_pixel::PxPlugin;
+
+#[derive(Event)]
+pub struct GameOver {
+    pub score: u32,
+}
 
 struct PhysicsPlugin;
 
@@ -62,7 +68,8 @@ pub struct PlayerAnimation {
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_event::<GameOver>()
+        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_state::<GameState>()
         .add_plugins(LogDiagnosticsPlugin::default())
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
@@ -72,6 +79,7 @@ fn main() {
             PhysicsPlugin,
             UIPlugin,
             EnemyPlugin,
+            StarPlugin,
         ))
         .add_plugins(
             WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::Escape)),
