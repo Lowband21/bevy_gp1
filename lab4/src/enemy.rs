@@ -7,6 +7,18 @@ use crate::Player;
 
 use bevy::audio::PlaybackMode;
 
+pub struct EnemyPlugin;
+
+impl Plugin for EnemyPlugin {
+    fn build(&self, app: &mut AppBuilder) {
+        app.init_resource::<EnemySpawnTimer>()
+            .add_systems(Update, tick_enemy_spawn_timer)
+            .add_systems(Update, spawn_enemies_over_time)
+            .add_systems(Update, spawn_enemies)
+            .add_systems(Update, enemy_movement)
+            .add_systems(Update, handle_enemy_boundary);
+    }
+}
 #[derive(Component)]
 pub struct Enemy {
     pub direction: Vec2,
