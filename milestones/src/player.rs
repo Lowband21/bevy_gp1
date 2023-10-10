@@ -1,12 +1,9 @@
 use crate::Platform;
 use crate::PlayerAnimation;
 use bevy::prelude::*;
-use bevy::utils::Duration;
 use bevy::window::PrimaryWindow;
 
 use crate::prelude::*;
-use bevy::render::render_resource::Texture;
-use bevy::render::view::Layer;
 
 pub struct PlayerPlugin;
 
@@ -43,6 +40,8 @@ pub enum PlayerActionState {
     Idle,
     Moving,
     Jumping,
+    Running,
+    RunningAndJumping,
 }
 
 #[derive(Component)]
@@ -128,16 +127,16 @@ fn player_animation_system(
 
             match player_state.action_state {
                 PlayerActionState::Idle => {
-                    animation.frame_count = 3; // Idle frames: 0, 1, 2
+                    animation.frame_count = 3;
                     sprite.index = (sprite.index + 1) % animation.frame_count;
                 }
-                PlayerActionState::Moving => {
-                    animation.frame_count = 6; // Walking/Running frames: 3, 4, 5, 6, 7, 8
+                PlayerActionState::Moving | PlayerActionState::Running => {
+                    animation.frame_count = 6;
                     sprite.index = 3 + (sprite.index - 3 + 1) % 6;
                 }
-                PlayerActionState::Jumping => {
-                    animation.frame_count = 5; // Jumping frames: 6, 7, 8, 9, 10
-                    sprite.index = 6 + (sprite.index - 6 + 1) % 5;
+                PlayerActionState::Jumping | PlayerActionState::RunningAndJumping => {
+                    animation.frame_count = 4;
+                    sprite.index = 5 + (sprite.index - 5 + 1) % 4;
                 }
             }
         }
@@ -169,6 +168,25 @@ pub fn player_movement(
             || keyboard_input.pressed(KeyCode::Down)
             || keyboard_input.pressed(KeyCode::S);
 
+        // Determine the current direction of the sprite (left or right)
+        let mut facing_right = transform.scale.x > 0.0;
+
+        // If pressing left and sprite was previously facing right, flip the sprite
+        if (keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::A))
+            && facing_right
+        {
+            transform.scale.x = -1.0;
+            facing_right = false;
+        }
+
+        // If pressing right and sprite was previously facing left, flip the sprite
+        if (keyboard_input.pressed(KeyCode::Right) || keyboard_input.pressed(KeyCode::D))
+            && !facing_right
+        {
+            transform.scale.x = 1.0;
+            facing_right = true;
+        }
+
         if keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::A) {
             direction += Vec3::new(-1.0, 0.0, 0.0);
         }
@@ -190,31 +208,39 @@ pub fn player_movement(
         } else {
             PLAYER_SPEED
         };
-        animation.playback_speed = if is_running {
-            1.4
-        } else {
-            if player_state.action_state == PlayerActionState::Jumping {
-                0.2
-            } else {
-                0.8
-            }
+        animation.playback_speed = match (is_running, player_state.action_state.clone()) {
+            (true, PlayerActionState::Jumping) => 0.2,
+            (true, PlayerActionState::Running) => 1.4,
+            (true, PlayerActionState::RunningAndJumping) => 0.6,
+            (false, PlayerActionState::Jumping) => 0.2,
+            _ => 0.8,
         };
 
         transform.translation += direction * speed * time.delta_seconds();
 
-        // Instead of modifying transform directly for jumping, adjust the vertical velocity.
         if keyboard_input.just_pressed(KeyCode::Space) && jump_state.can_jump {
             velocity.value.y += jump_state.jump_force;
             jump_state.can_jump = false;
-            player_state.action_state = PlayerActionState::Jumping;
+            if is_running {
+                player_state.action_state = PlayerActionState::RunningAndJumping;
+            } else {
+                player_state.action_state = PlayerActionState::Jumping;
+            }
         }
 
         // Update player's action state based on their movements
-        if player_state.action_state != PlayerActionState::Jumping {
-            if direction.length() > 0.0 {
-                player_state.action_state = PlayerActionState::Moving;
-            } else {
-                player_state.action_state = PlayerActionState::Idle;
+        match player_state.action_state {
+            PlayerActionState::Jumping | PlayerActionState::RunningAndJumping => {} // Do nothing if jumping
+            _ => {
+                if is_moving {
+                    if is_running {
+                        player_state.action_state = PlayerActionState::Running;
+                    } else {
+                        player_state.action_state = PlayerActionState::Moving;
+                    }
+                } else {
+                    player_state.action_state = PlayerActionState::Idle;
+                }
             }
         }
     }
