@@ -23,7 +23,12 @@ mod environment;
 
 mod ui;
 
+mod enemy;
+
+mod stars;
+
 use crate::cam::*;
+use crate::enemy::*;
 use crate::environment::*;
 use crate::player::*;
 use crate::prelude::*;
@@ -61,7 +66,13 @@ fn main() {
         .add_state::<GameState>()
         .add_plugins(LogDiagnosticsPlugin::default())
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
-        .add_plugins((CameraPlugin, PlayerPlugin, PhysicsPlugin, UIPlugin))
+        .add_plugins((
+            CameraPlugin,
+            PlayerPlugin,
+            PhysicsPlugin,
+            UIPlugin,
+            EnemyPlugin,
+        ))
         .add_plugins(
             WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::Escape)),
         )
