@@ -16,7 +16,7 @@ impl Plugin for TilemapPlugin {
 fn spawn_tilemap(mut commands: Commands, asset_server: Res<AssetServer>) {
     //commands.spawn(Camera2dBundle::default());
 
-    let handle = asset_server.load("ldtk/AdvancedAutoLayers.ldtk");
+    let handle = asset_server.load("ldtk/BasicLevel.ldtk");
 
     commands.spawn(LdtkWorldBundle {
         ldtk_handle: handle,
