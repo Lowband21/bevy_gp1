@@ -1,3 +1,4 @@
+use crate::GameState;
 use crate::Platform;
 use crate::PlayerAnimation;
 use bevy::prelude::*;
@@ -11,10 +12,19 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<PlayerJumpState>()
             .add_systems(Startup, spawn_player)
-            .add_systems(Update, player_movement)
-            .add_systems(Update, confine_player_movement)
-            .add_systems(Update, player_landing_system)
-            .add_systems(Update, player_animation_system);
+            .add_systems(Update, player_movement.run_if(in_state(GameState::Running)))
+            .add_systems(
+                Update,
+                confine_player_movement.run_if(in_state(GameState::Running)),
+            )
+            .add_systems(
+                Update,
+                player_landing_system.run_if(in_state(GameState::Running)),
+            )
+            .add_systems(
+                Update,
+                player_animation_system.run_if(in_state(GameState::Running)),
+            );
     }
 }
 
@@ -89,7 +99,7 @@ fn spawn_player(
     // Define the sprite dimensions
     let sprite = TextureAtlasSprite {
         index: 0,
-        custom_size: Some(Vec2::splat(100.0)), // 140 is the width and height of each frame
+        custom_size: Some(Vec2::splat(16.0)), // 140 is the width and height of each frame
         ..Default::default()
     };
 
@@ -291,7 +301,7 @@ pub fn player_landing_system(
                     player_state.action_state = PlayerActionState::Idle;
                 }
             }
-            println!("{}", player_velocity.value.y);
+            //println!("{}", player_velocity.value.y);
         }
     }
 }

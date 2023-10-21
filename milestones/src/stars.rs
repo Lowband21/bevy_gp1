@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use rand::prelude::*;
 
+use crate::GameState;
 use crate::Player;
 
 use crate::prelude::*;
@@ -14,11 +15,17 @@ impl Plugin for StarPlugin {
         app.init_resource::<StarSpawnTimer>()
             .init_resource::<Score>()
             .init_resource::<HighScores>()
-            .add_systems(Startup, spawn_stars)
-            .add_systems(Update, player_hit_star)
-            .add_systems(Update, update_score)
-            .add_systems(Update, tick_star_spawn_timer)
-            .add_systems(Update, spawn_stars_over_time);
+            .add_systems(Startup, spawn_stars.run_if(in_state(GameState::Running)))
+            .add_systems(Update, player_hit_star.run_if(in_state(GameState::Running)))
+            .add_systems(Update, update_score.run_if(in_state(GameState::Running)))
+            .add_systems(
+                Update,
+                tick_star_spawn_timer.run_if(in_state(GameState::Running)),
+            )
+            .add_systems(
+                Update,
+                spawn_stars_over_time.run_if(in_state(GameState::Running)),
+            );
     }
 }
 

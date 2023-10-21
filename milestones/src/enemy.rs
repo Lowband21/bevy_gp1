@@ -5,6 +5,7 @@ use rand::prelude::*;
 use crate::prelude::*;
 use crate::stars::Score;
 use crate::GameOver;
+use crate::GameState;
 use crate::Player;
 
 use bevy::app::App;
@@ -17,11 +18,23 @@ impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<EnemySpawnTimer>()
             .add_systems(Startup, spawn_enemies)
-            .add_systems(Update, tick_enemy_spawn_timer)
-            .add_systems(Update, spawn_enemies_over_time)
-            .add_systems(Update, enemy_movement)
-            .add_systems(Update, handle_enemy_boundary)
-            .add_systems(Update, enemy_hit_player);
+            .add_systems(
+                Update,
+                tick_enemy_spawn_timer.run_if(in_state(GameState::Running)),
+            )
+            .add_systems(
+                Update,
+                spawn_enemies_over_time.run_if(in_state(GameState::Running)),
+            )
+            .add_systems(Update, enemy_movement.run_if(in_state(GameState::Running)))
+            .add_systems(
+                Update,
+                handle_enemy_boundary.run_if(in_state(GameState::Running)),
+            )
+            .add_systems(
+                Update,
+                enemy_hit_player.run_if(in_state(GameState::Running)),
+            );
     }
 }
 #[derive(Component)]

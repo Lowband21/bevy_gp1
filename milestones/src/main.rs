@@ -2,6 +2,7 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::input::common_conditions::input_toggle_active;
 use bevy::input::mouse::MouseWheel;
 use bevy::window::PrimaryWindow;
+use bevy_ecs_ldtk::prelude::*;
 use bevy_inspector_egui::prelude::ReflectInspectorOptions;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_inspector_egui::InspectorOptions;
@@ -27,12 +28,17 @@ mod enemy;
 
 mod stars;
 
+mod tilemap;
+
+mod helpers;
+
 use crate::cam::*;
 use crate::enemy::*;
 use crate::environment::*;
 use crate::player::*;
 use crate::prelude::*;
 use crate::stars::*;
+use crate::tilemap::TilemapPlugin;
 use crate::ui::*;
 
 use seldom_pixel::PxPlugin;
@@ -47,7 +53,7 @@ struct PhysicsPlugin;
 impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Gravity>()
-            .add_systems(Update, physics_system);
+            .add_systems(Update, physics_system.run_if(in_state(GameState::Running)));
     }
 }
 
@@ -55,6 +61,7 @@ impl Plugin for PhysicsPlugin {
 enum GameState {
     #[default]
     Running,
+    Loading,
     Paused,
 }
 
@@ -66,6 +73,10 @@ pub struct PlayerAnimation {
     player: Handle<TextureAtlas>,
 }
 
+/// System set to allow ordering of `PanCamPlugin`
+#[derive(Debug, Clone, Copy, SystemSet, PartialEq, Eq, Hash)]
+pub struct GameSystemSet;
+
 fn main() {
     App::new()
         .add_event::<GameOver>()
@@ -73,6 +84,8 @@ fn main() {
         .add_state::<GameState>()
         .add_plugins(LogDiagnosticsPlugin::default())
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
+        .add_plugins(LdtkPlugin)
+        .insert_resource(LevelSelection::Index(0))
         .add_plugins((
             CameraPlugin,
             PlayerPlugin,
@@ -80,14 +93,15 @@ fn main() {
             UIPlugin,
             EnemyPlugin,
             StarPlugin,
+            TilemapPlugin,
         ))
         .add_plugins(
             WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::Escape)),
         )
-        .add_systems(Startup, spawn_platforms)
+        //.add_systems(Startup, spawn_platforms)
         // Add a loading state for assets
         .add_loading_state(
-            LoadingState::new(GameState::Paused).continue_to_state(GameState::Running),
+            LoadingState::new(GameState::Loading).continue_to_state(GameState::Paused),
         )
         // Initialize your asset collection
         .init_collection::<PlayerAnimation>()

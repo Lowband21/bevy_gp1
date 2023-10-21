@@ -18,7 +18,10 @@ impl Plugin for UIPlugin {
         app.add_systems(Startup, spawn_menu);
         app.add_systems(Startup, spawn_fps_text);
         app.add_systems(Update, (toggle_menu_visibility, resume_button));
-        app.add_systems(Update, fps_display_system);
+        app.add_systems(
+            Update,
+            fps_display_system.run_if(in_state(GameState::Running)),
+        );
     }
 }
 
@@ -132,10 +135,12 @@ fn toggle_menu_visibility(
             Visibility::Visible => {
                 *visibility = Visibility::Hidden;
                 *app_state = State::new(GameState::Running);
+                println!("Set Game State to Running");
             }
             Visibility::Hidden | Visibility::Inherited => {
                 *visibility = Visibility::Visible;
                 *app_state = State::new(GameState::Paused);
+                println!("Set Game State to Paused");
             }
         }
     }
@@ -144,15 +149,21 @@ fn toggle_menu_visibility(
 fn resume_button(
     button: Query<(&Button, &Interaction), With<Button>>,
     mut visibility: Query<&mut Visibility, With<Menu>>,
+    mut app_state: ResMut<State<GameState>>,
 ) {
     for (_button, interaction) in button.iter() {
         match *interaction {
             Interaction::Pressed => {
                 let mut visibility = visibility.single_mut();
                 match *visibility {
-                    Visibility::Visible => *visibility = Visibility::Hidden,
-                    Visibility::Hidden => *visibility = Visibility::Visible,
-                    Visibility::Inherited => *visibility = Visibility::Hidden,
+                    Visibility::Visible => {
+                        *visibility = Visibility::Hidden;
+                        *app_state = State::new(GameState::Running); // Resume the game
+                    }
+                    Visibility::Hidden | Visibility::Inherited => {
+                        *visibility = Visibility::Visible;
+                        *app_state = State::new(GameState::Paused); // Pause the game
+                    }
                 }
 
                 // Execute your desired code here
